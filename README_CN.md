@@ -64,8 +64,13 @@ MiniMax 提供国内和海外两个平台，请根据您的网络环境选择：
 # macOS/Linux/WSL
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Windows (PowerShell)
+python -m pip install --user pipx
+python -m pipx ensurepath
+# 安装后需要重启 PowerShell
+
 # 安装完成后，重启终端或运行：
-source ~/.bashrc  # 或 ~/.zshrc
+source ~/.bashrc  # 或 ~/.zshrc (macOS/Linux)
 ```
 
 我们提供两种使用模式，请根据您的需求选择：
@@ -81,7 +86,12 @@ source ~/.bashrc  # 或 ~/.zshrc
 uv tool install git+https://github.com/MiniMax-AI/Mini-Agent.git
 
 # 2. 运行配置脚本（自动创建配置文件）
+# macOS/Linux:
 curl -fsSL https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.sh | bash
+
+# Windows (PowerShell):
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.ps1" -OutFile "$env:TEMP\setup-config.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup-config.ps1"
 ```
 
 > 💡 **提示**：如果您希望在本地进行开发或修改代码，请使用下方的"开发模式"。
@@ -129,16 +139,34 @@ git clone https://github.com/MiniMax-AI/Mini-Agent.git
 cd Mini-Agent
 
 # 2. 安装 uv（如果尚未安装）
+# macOS/Linux:
 curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows (PowerShell):
+irm https://astral.sh/uv/install.ps1 | iex
+# 安装后需要重启终端
 
 # 3. 同步依赖
 uv sync
+
+# 替代方案: 手动安装依赖（如果不使用 uv）
+# pip install -r requirements.txt
+# 或者安装必需的包:
+# pip install tiktoken pyyaml httpx pydantic requests prompt-toolkit mcp
 
 # 4. 初始化 Claude Skills（可选）
 git submodule update --init --recursive
 
 # 5. 复制配置模板
+```
+
+**macOS/Linux:**
+```bash
 cp mini_agent/config/config-example.yaml mini_agent/config/config.yaml
+```
+
+**Windows:**
+```powershell
+Copy-Item mini_agent\config\config-example.yaml mini_agent\config\config.yaml
 
 # 6. 编辑配置文件
 vim mini_agent/config/config.yaml  # 或使用您偏好的编辑器
@@ -220,6 +248,34 @@ pytest tests/test_agent.py tests/test_note_tool.py -v
 - ✅ **集成测试** - Agent 端到端执行
 - ✅ **外部服务** - Git MCP 服务器加载
 
+
+## 常见问题
+
+### SSL 证书错误
+
+如果遇到 `[SSL: CERTIFICATE_VERIFY_FAILED]` 错误:
+
+**测试环境快速修复** (修改 `mini_agent/llm.py`):
+```python
+# 第 50 行: 给 AsyncClient 添加 verify=False
+async with httpx.AsyncClient(timeout=120.0, verify=False) as client:
+```
+
+**生产环境解决方案**:
+```bash
+# 更新证书
+pip install --upgrade certifi
+
+# 或配置系统代理/证书
+```
+
+### 模块未找到错误
+
+确保从项目目录运行:
+```bash
+cd Mini-Agent
+python -m mini_agent.cli
+```
 
 ## 相关文档
 

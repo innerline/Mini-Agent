@@ -64,8 +64,13 @@ Both usage modes require uv. If you don't have it installed:
 # macOS/Linux/WSL
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
+# Windows (PowerShell)
+python -m pip install --user pipx
+python -m pipx ensurepath
+# Restart PowerShell after installation
+
 # After installation, restart your terminal or run:
-source ~/.bashrc  # or ~/.zshrc
+source ~/.bashrc  # or ~/.zshrc (macOS/Linux)
 ```
 
 We offer two usage modes - choose based on your needs:
@@ -81,7 +86,12 @@ Perfect for users who want to quickly try Mini Agent without cloning the reposit
 uv tool install git+https://github.com/MiniMax-AI/Mini-Agent.git
 
 # 2. Run setup script (automatically creates config files)
+# macOS/Linux:
 curl -fsSL https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.sh | bash
+
+# Windows (PowerShell):
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.ps1" -OutFile "$env:TEMP\setup-config.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\setup-config.ps1"
 ```
 
 > 💡 **Tip**: If you want to develop locally or modify code, use "Development Mode" below
@@ -129,16 +139,34 @@ git clone https://github.com/MiniMax-AI/Mini-Agent.git
 cd Mini-Agent
 
 # 2. Install uv (if you haven't)
+# macOS/Linux:
 curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows (PowerShell):
+irm https://astral.sh/uv/install.ps1 | iex
+# Restart terminal after installation
 
 # 3. Sync dependencies
 uv sync
+
+# Alternative: Install dependencies manually (if not using uv)
+# pip install -r requirements.txt
+# Or install required packages:
+# pip install tiktoken pyyaml httpx pydantic requests prompt-toolkit mcp
 
 # 4. Initialize Claude Skills (Optional)
 git submodule update --init --recursive
 
 # 5. Copy config template
+```
+
+**macOS/Linux:**
+```bash
 cp mini_agent/config/config-example.yaml mini_agent/config/config.yaml
+```
+
+**Windows:**
+```powershell
+Copy-Item mini_agent\config\config-example.yaml mini_agent\config\config.yaml
 
 # 6. Edit config file
 vim mini_agent/config/config.yaml  # Or use your preferred editor
@@ -219,6 +247,34 @@ pytest tests/test_agent.py tests/test_note_tool.py -v
 - ✅ **Integration Tests** - Agent end-to-end execution
 - ✅ **External Services** - Git MCP Server loading
 
+
+## Troubleshooting
+
+### SSL Certificate Error
+
+If you encounter `[SSL: CERTIFICATE_VERIFY_FAILED]` error:
+
+**Quick fix for testing** (modify `mini_agent/llm.py`):
+```python
+# Line 50: Add verify=False to AsyncClient
+async with httpx.AsyncClient(timeout=120.0, verify=False) as client:
+```
+
+**Production solution**:
+```bash
+# Update certificates
+pip install --upgrade certifi
+
+# Or configure system proxy/certificates
+```
+
+### Module Not Found Error
+
+Make sure you're running from the project directory:
+```bash
+cd Mini-Agent
+python -m mini_agent.cli
+```
 
 ## Related Documentation
 

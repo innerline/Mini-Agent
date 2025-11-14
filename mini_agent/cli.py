@@ -26,6 +26,7 @@ from mini_agent.agent import Agent
 from mini_agent.config import Config
 from mini_agent.llm import LLMClient
 from mini_agent.tools.base import Tool
+from mini_agent.utils import calculate_display_width
 from mini_agent.tools.bash_tool import BashTool, BashKillTool, BashOutputTool
 from mini_agent.tools.file_tools import EditTool, ReadTool, WriteTool
 from mini_agent.tools.mcp_loader import cleanup_mcp_connections, load_mcp_tools_async
@@ -69,13 +70,20 @@ class Colors:
 
 
 def print_banner():
-    """Print welcome banner"""
+    """Print welcome banner with proper alignment"""
+    BOX_WIDTH = 58
+    banner_text = f"{Colors.BOLD}🤖 Mini Agent - Multi-turn Interactive Session{Colors.RESET}"
+    banner_width = calculate_display_width(banner_text)
+
+    # Center the text with proper padding
+    total_padding = BOX_WIDTH - banner_width
+    left_padding = total_padding // 2
+    right_padding = total_padding - left_padding
+
     print()
-    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}╔{'═' * 58}╗{Colors.RESET}")
-    print(
-        f"{Colors.BOLD}{Colors.BRIGHT_CYAN}║{Colors.RESET}  {Colors.BOLD}🤖 Mini Agent - Multi-turn Interactive Session{Colors.RESET}        {Colors.BOLD}{Colors.BRIGHT_CYAN}║{Colors.RESET}"
-    )
-    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}╚{'═' * 58}╝{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}╔{'═' * BOX_WIDTH}╗{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}║{Colors.RESET}{' ' * left_padding}{banner_text}{' ' * right_padding}{Colors.BOLD}{Colors.BRIGHT_CYAN}║{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}╚{'═' * BOX_WIDTH}╝{Colors.RESET}")
     print()
 
 
@@ -108,29 +116,40 @@ def print_help():
 
 
 def print_session_info(agent: Agent, workspace_dir: Path, model: str):
-    """Print session information"""
-    print(f"{Colors.DIM}┌{'─' * 58}┐{Colors.RESET}")
-    print(
-        f"{Colors.DIM}│{Colors.RESET} {Colors.BRIGHT_CYAN}Session Info{Colors.RESET}                                         {Colors.DIM}│{Colors.RESET}"
-    )
-    print(f"{Colors.DIM}├{'─' * 58}┤{Colors.RESET}")
-    print(f"{Colors.DIM}│{Colors.RESET} Model: {model}{' ' * max(0, 49 - len(str(model)))} {Colors.DIM}│{Colors.RESET}")
-    print(
-        f"{Colors.DIM}│{Colors.RESET} Workspace: {workspace_dir}{' ' * max(0, 45 - len(str(workspace_dir)))} {Colors.DIM}│{Colors.RESET}"
-    )
-    msg_text = f"{len(agent.messages)} messages"
-    print(
-        f"{Colors.DIM}│{Colors.RESET} Message History: {msg_text}{' ' * max(0, 38 - len(msg_text))} {Colors.DIM}│{Colors.RESET}"
-    )
-    tools_text = f"{len(agent.tools)} tools"
-    print(
-        f"{Colors.DIM}│{Colors.RESET} Available Tools: {tools_text}{' ' * max(0, 41 - len(tools_text))} {Colors.DIM}│{Colors.RESET}"
-    )
-    print(f"{Colors.DIM}└{'─' * 58}┘{Colors.RESET}")
+    """Print session information with proper alignment"""
+    BOX_WIDTH = 58
+
+    def print_info_line(text: str):
+        """Print a single info line with proper padding"""
+        # Account for leading space
+        text_width = calculate_display_width(text)
+        padding = max(0, BOX_WIDTH - 1 - text_width)
+        print(f"{Colors.DIM}│{Colors.RESET} {text}{' ' * padding}{Colors.DIM}│{Colors.RESET}")
+
+    # Top border
+    print(f"{Colors.DIM}┌{'─' * BOX_WIDTH}┐{Colors.RESET}")
+
+    # Header (centered)
+    header_text = f"{Colors.BRIGHT_CYAN}Session Info{Colors.RESET}"
+    header_width = calculate_display_width(header_text)
+    header_padding_total = BOX_WIDTH - 1 - header_width  # -1 for leading space
+    header_padding_left = header_padding_total // 2
+    header_padding_right = header_padding_total - header_padding_left
+    print(f"{Colors.DIM}│{Colors.RESET} {' ' * header_padding_left}{header_text}{' ' * header_padding_right}{Colors.DIM}│{Colors.RESET}")
+
+    # Divider
+    print(f"{Colors.DIM}├{'─' * BOX_WIDTH}┤{Colors.RESET}")
+
+    # Info lines
+    print_info_line(f"Model: {model}")
+    print_info_line(f"Workspace: {workspace_dir}")
+    print_info_line(f"Message History: {len(agent.messages)} messages")
+    print_info_line(f"Available Tools: {len(agent.tools)} tools")
+
+    # Bottom border
+    print(f"{Colors.DIM}└{'─' * BOX_WIDTH}┘{Colors.RESET}")
     print()
-    print(
-        f"{Colors.DIM}Type {Colors.BRIGHT_GREEN}/help{Colors.DIM} for help, {Colors.BRIGHT_GREEN}/exit{Colors.DIM} to quit{Colors.RESET}"
-    )
+    print(f"{Colors.DIM}Type {Colors.BRIGHT_GREEN}/help{Colors.DIM} for help, {Colors.BRIGHT_GREEN}/exit{Colors.DIM} to quit{Colors.RESET}")
     print()
 
 
@@ -321,9 +340,7 @@ async def run_agent(workspace_dir: Path):
         print(f"  {Colors.DIM}3) <package>/config/config.yaml{Colors.RESET} (installed)")
         print()
         print(f"{Colors.BRIGHT_YELLOW}🚀 Quick Setup (Recommended):{Colors.RESET}")
-        print(
-            f"  {Colors.BRIGHT_GREEN}curl -fsSL https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.sh | bash{Colors.RESET}"
-        )
+        print(f"  {Colors.BRIGHT_GREEN}curl -fsSL https://raw.githubusercontent.com/MiniMax-AI/Mini-Agent/main/scripts/setup-config.sh | bash{Colors.RESET}")
         print()
         print(f"{Colors.DIM}  This will automatically:{Colors.RESET}")
         print(f"{Colors.DIM}    • Create ~/.mini-agent/config/{Colors.RESET}")
@@ -382,9 +399,7 @@ async def run_agent(workspace_dir: Path):
     # Set retry callback
     if config.llm.retry.enabled:
         llm_client.retry_callback = on_retry
-        print(
-            f"{Colors.GREEN}✅ LLM retry mechanism enabled (max {config.llm.retry.max_retries} retries){Colors.RESET}"
-        )
+        print(f"{Colors.GREEN}✅ LLM retry mechanism enabled (max {config.llm.retry.max_retries} retries){Colors.RESET}")
 
     # 3. Initialize base tools (independent of workspace)
     tools, skill_loader = await initialize_base_tools(config)
@@ -407,9 +422,7 @@ async def run_agent(workspace_dir: Path):
         if skills_metadata:
             # Replace placeholder with actual metadata
             system_prompt = system_prompt.replace("{SKILLS_METADATA}", skills_metadata)
-            print(
-                f"{Colors.GREEN}✅ Injected {len(skill_loader.loaded_skills)} skills metadata into system prompt{Colors.RESET}"
-            )
+            print(f"{Colors.GREEN}✅ Injected {len(skill_loader.loaded_skills)} skills metadata into system prompt{Colors.RESET}")
         else:
             # Remove placeholder if no skills
             system_prompt = system_prompt.replace("{SKILLS_METADATA}", "")
@@ -531,9 +544,7 @@ async def run_agent(workspace_dir: Path):
                 break
 
             # Run Agent
-            print(
-                f"\n{Colors.BRIGHT_BLUE}Agent{Colors.RESET} {Colors.DIM}›{Colors.RESET} {Colors.DIM}Thinking...{Colors.RESET}\n"
-            )
+            print(f"\n{Colors.BRIGHT_BLUE}Agent{Colors.RESET} {Colors.DIM}›{Colors.RESET} {Colors.DIM}Thinking...{Colors.RESET}\n")
             agent.add_user_message(user_input)
             _ = await agent.run()
 

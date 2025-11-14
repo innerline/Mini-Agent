@@ -9,6 +9,7 @@ from .llm import LLMClient
 from .logger import AgentLogger
 from .schema import Message
 from .tools.base import Tool, ToolResult
+from .utils import calculate_display_width
 
 
 # ANSI color codes
@@ -267,12 +268,15 @@ Requirements:
             # Check and summarize message history to prevent context overflow
             await self._summarize_messages()
 
-            # Step header
-            print(f"\n{Colors.DIM}╭{'─' * 58}╮{Colors.RESET}")
-            print(
-                f"{Colors.DIM}│{Colors.RESET} {Colors.BOLD}{Colors.BRIGHT_CYAN}💭 Step {step + 1}/{self.max_steps}{Colors.RESET}{' ' * (49 - len(f'Step {step + 1}/{self.max_steps}'))}{Colors.DIM}│{Colors.RESET}"
-            )
-            print(f"{Colors.DIM}╰{'─' * 58}╯{Colors.RESET}")
+            # Step header with proper width calculation
+            BOX_WIDTH = 58
+            step_text = f"{Colors.BOLD}{Colors.BRIGHT_CYAN}💭 Step {step + 1}/{self.max_steps}{Colors.RESET}"
+            step_display_width = calculate_display_width(step_text)
+            padding = max(0, BOX_WIDTH - 1 - step_display_width)  # -1 for leading space
+
+            print(f"\n{Colors.DIM}╭{'─' * BOX_WIDTH}╮{Colors.RESET}")
+            print(f"{Colors.DIM}│{Colors.RESET} {step_text}{' ' * padding}{Colors.DIM}│{Colors.RESET}")
+            print(f"{Colors.DIM}╰{'─' * BOX_WIDTH}╯{Colors.RESET}")
 
             # Get tool schemas
             tool_schemas = [tool.to_schema() for tool in self.tools.values()]

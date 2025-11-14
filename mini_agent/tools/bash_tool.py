@@ -1,6 +1,10 @@
-"""Bash command execution tool with background process management."""
+"""Shell command execution tool with background process management.
+
+Supports both bash (Unix/Linux/macOS) and PowerShell (Windows).
+"""
 
 import asyncio
+import platform
 import re
 import time
 import uuid
@@ -211,7 +215,17 @@ class BackgroundShellManager:
 
 
 class BashTool(Tool):
-    """Execute bash commands in foreground or background."""
+    """Execute shell commands in foreground or background.
+    
+    Automatically detects OS and uses appropriate shell:
+    - Windows: PowerShell
+    - Unix/Linux/macOS: bash
+    """
+
+    def __init__(self):
+        """Initialize BashTool with OS-specific shell detection."""
+        self.is_windows = platform.system() == "Windows"
+        self.shell_name = "PowerShell" if self.is_windows else "bash"
 
     @property
     def name(self) -> str:
@@ -219,7 +233,27 @@ class BashTool(Tool):
 
     @property
     def description(self) -> str:
-        return """Execute bash commands in foreground or background.
+        shell_examples = {
+            "Windows": """Execute PowerShell commands in foreground or background.
+
+For terminal operations like git, npm, docker, etc. DO NOT use for file operations - use specialized tools.
+
+Parameters:
+  - command (required): PowerShell command to execute
+  - timeout (optional): Timeout in seconds (default: 120, max: 600) for foreground commands
+  - run_in_background (optional): Set true for long-running commands (servers, etc.)
+
+Tips:
+  - Quote file paths with spaces: cd "My Documents"
+  - Chain dependent commands with semicolon: git add . ; git commit -m "msg"
+  - Use absolute paths instead of cd when possible
+  - For background commands, monitor with bash_output and terminate with bash_kill
+
+Examples:
+  - git status
+  - npm test
+  - python -m http.server 8080 (with run_in_background=true)""",
+            "Unix": """Execute bash commands in foreground or background.
 
 For terminal operations like git, npm, docker, etc. DO NOT use for file operations - use specialized tools.
 
@@ -238,15 +272,18 @@ Examples:
   - git status
   - npm test
   - python3 -m http.server 8080 (with run_in_background=true)"""
+        }
+        return shell_examples["Windows"] if self.is_windows else shell_examples["Unix"]
 
     @property
     def parameters(self) -> dict[str, Any]:
+        cmd_desc = f"The {self.shell_name} command to execute. Quote file paths with spaces using double quotes."
         return {
             "type": "object",
             "properties": {
                 "command": {
                     "type": "string",
-                    "description": "The bash command to execute. Quote file paths with spaces using double quotes.",
+                    "description": cmd_desc,
                 },
                 "timeout": {
                     "type": "integer",
@@ -268,10 +305,10 @@ Examples:
         timeout: int = 120,
         run_in_background: bool = False,
     ) -> ToolResult:
-        """Execute bash command with optional background execution.
+        """Execute shell command with optional background execution.
 
         Args:
-            command: The bash command to execute
+            command: The shell command to execute
             timeout: Timeout in seconds (default: 120, max: 600)
             run_in_background: Set true to run command in background
 
@@ -286,16 +323,31 @@ Examples:
             elif timeout < 1:
                 timeout = 120
 
+            # Prepare shell-specific command execution
+            if self.is_windows:
+                # Windows: Use PowerShell with appropriate encoding
+                shell_cmd = ["powershell.exe", "-NoProfile", "-Command", command]
+            else:
+                # Unix/Linux/macOS: Use bash
+                shell_cmd = command
+
             if run_in_background:
                 # Background execution: Create isolated process
                 bash_id = str(uuid.uuid4())[:8]
 
                 # Start background process with combined stdout/stderr
-                process = await asyncio.create_subprocess_shell(
-                    command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,  # Redirect stderr to stdout
-                )
+                if self.is_windows:
+                    process = await asyncio.create_subprocess_exec(
+                        *shell_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                    )
+                else:
+                    process = await asyncio.create_subprocess_shell(
+                        shell_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                    )
 
                 # Create background shell and add to manager
                 bg_shell = BackgroundShell(bash_id=bash_id, command=command, process=process, start_time=time.time())
@@ -319,11 +371,18 @@ Examples:
 
             else:
                 # Foreground execution: Create isolated process
-                process = await asyncio.create_subprocess_shell(
-                    command,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
+                if self.is_windows:
+                    process = await asyncio.create_subprocess_exec(
+                        *shell_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                    )
+                else:
+                    process = await asyncio.create_subprocess_shell(
+                        shell_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                    )
 
                 try:
                     stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
