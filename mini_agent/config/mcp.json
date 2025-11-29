@@ -12,7 +12,7 @@
       "env": {
         "JINA_API_KEY": "",
         "SERPER_API_KEY": "",
-        "MINIMAX_API_KEY": ""
+        "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJHcm91cE5hbWUiOiIiLCJVc2VyTmFtZSI6IklubmVybGluZSIsIkFjY291bnQiOiIiLCJTdWJqZWN0SUQiOiIxOTkxNjc3NTA1NDMzNTEwODcwIiwiUGhvbmUiOiIiLCJHcm91cElEIjoiMTk5MTY3NzUwNTQyOTMxMjQ3MCIsIlBhZ2VOYW1lIjoiIiwiTWFpbCI6ImlubmVybGluZUBtZS5jb20iLCJDcmVhdGVUaW1lIjoiMjAyNS0xMS0yMSAxMTowMDoxNCIsIlRva2VuVHlwZSI6MSwiaXNzIjoibWluaW1heCJ9.YOcsfn2MqiT2BJxWUtu_Gw3gOa7CXZ4ROYn6pM6xWisQrMFrIBBatUF3k3lu_8XUV16YvxHlj4sqGmium8fCW1n6gPOQC74EJdwjtEm1OiD7HoPBRIWJwFYr64jQAIr7YXKs7SiXW3qiSmcmCqY-eWK_BFspLY_rJJXjEvBRtDcTG2kMLMUul8siG2QoEBrU0VZ3DZ9xUEmpcsYeWeRL1vF2JUfXCUNiejWDzoPR_azHnpi89J8c93Zi5FAbHuTTzDuCb8yWGDgrKJiWtCidAmvUZ9jso5MHT-G3dG4E8dS58v1RzS8R3_SJwCsxX-oGn20E1XA9jsX0aZiFEkX6hQ": ""
       },
       "disabled": true
     },
@@ -24,6 +24,65 @@
         "@modelcontextprotocol/server-memory"
       ],
       "disabled": true
+    },
+    
+    "obsidian": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "OBSIDIAN_HOST",
+        "-e",
+        "OBSIDIAN_API_KEY",
+        "mcp/obsidian"
+      ],
+      "env": {
+        "OBSIDIAN_HOST": "host.docker.internal",
+        "OBSIDIAN_API_KEY": "YOUR_OBSIDIAN_API_KEY"
+      }
+    },
+    "github-official": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
+      }
+    },
+    "duckduckgo": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp/duckduckgo"
+      ]
+    },
+    "fetch": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp/fetch"
+      ]
+    },
+    "youtube_transcript": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp/youtube-transcript"
+      ]
     }
   }
 }
